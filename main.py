@@ -16,7 +16,7 @@ def init_app(init_db=True):
             if sessionmanager._engine is not None:
                 await sessionmanager.close()
 
-    server = FastAPI(title="FastAPI BoilerPlate", lifespan=lifespan)
+    server = FastAPI(title=settings.PROJECT_TITLE, lifespan=lifespan)
     server.include_router(user_router,prefix="/api/v1")
     return server
 

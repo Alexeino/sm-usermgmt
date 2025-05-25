@@ -10,7 +10,8 @@ from datetime import timedelta, datetime
 from settings.config import settings
 from fastapi.responses import JSONResponse
 from apps.base.utils import Hasher
-from apps.auth.dependencies import access_token_bearer, RefreshTokenBearer
+from apps.auth.dependencies import RefreshTokenBearer, AccessTokenBearer
+from apps.auth.constants import ROLE_SCOPE_MAPPING
 
 user_router = APIRouter(prefix="/users",tags=["Users App"])
 
@@ -19,14 +20,19 @@ async def create_user(user_data: UserCreate, db: AsyncSession = Depends(get_db))
     user = await User.create(user_data,db)
     return user
 
-@user_router.get("/get-customer",response_model=UserBase)
-async def get_customer(email: EmailStr, db: AsyncSession = Depends(get_db),current_user = Depends(access_token_bearer)):
-    customer = await User.get_user(email,db)
+@user_router.get("/get-customer", response_model=UserBase)
+async def get_customer(
+    email: EmailStr,
+    db: AsyncSession = Depends(get_db),
+    current_user=Depends(AccessTokenBearer(required_scope="GET_CUSTOMER_DETAILS")),
+):
+    customer = await User.get_user(email, db)
     if customer:
         return customer
+
     raise HTTPException(
-        status_code = status.HTTP_404_NOT_FOUND,
-        detail=f"User with Email: {email} not found!"
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"User with Email: {email} not found!",
     )
     
 @user_router.post("/login")
@@ -37,12 +43,12 @@ async def login_users(login_data: UserLoginModel, db: AsyncSession = Depends(get
     user = await User.get_user(email,db)
     if user:
         password_valid = Hasher.verify_password(password,user.password_hash)
-        
         if password_valid:
             access_token = create_access_token(
                 user_data={
                     'email': user.email,
-                    'user_id': user.id
+                    'user_id': user.id,
+                    'scopes': ROLE_SCOPE_MAPPING[user.role.value]
                 },
                 expiry = timedelta(seconds=settings.ACCESS_TOKEN_EXPIRY)
             )
