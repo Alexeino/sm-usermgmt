@@ -4,11 +4,10 @@ from settings.config import settings
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
-import apps  # noqa: F401
-from db.session import Base
+from db.base import Base, import_all_models
 
 from alembic import context
-
+import_all_models()
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
