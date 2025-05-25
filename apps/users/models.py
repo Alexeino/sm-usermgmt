@@ -34,7 +34,7 @@ class User(TimeStampModelMixin, Base):
         return user
     
     @classmethod
-    async def get_user(cls,email: EmailStr,role: UserRole, db: AsyncSession):
-        query = select(User).where(User.email == email, User.role == role)
+    async def get_user(cls,email: EmailStr, db: AsyncSession):
+        query = select(User).where(User.email == email)
         result = await db.execute(query)
         return result.scalars().first()
