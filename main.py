@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from settings.config import settings
 from db.session import sessionmanager
+from api.v1.users.routers import user_router
 
 def init_app(init_db=True):
     lifespan = None
@@ -16,6 +17,7 @@ def init_app(init_db=True):
                 await sessionmanager.close()
 
     server = FastAPI(title="FastAPI BoilerPlate", lifespan=lifespan)
+    server.include_router(user_router,prefix="/api/v1")
     return server
 
 server = init_app()
