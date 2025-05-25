@@ -9,8 +9,6 @@ class TokenBearer(HTTPBearer):
         
     async def __call__(self, request: Request) -> HTTPAuthorizationCredentials | None:
         creds = await super().__call__(request)
-        # print(creds.scheme)
-        # print(creds.credentials)
         
         token = creds.credentials
         
@@ -37,11 +35,25 @@ class TokenBearer(HTTPBearer):
     
 class AccessTokenBearer(TokenBearer):
     
+    def __init__(self,required_scope: str = None, auto_error: bool = True):
+        super().__init__(auto_error=auto_error)
+        self.required_scope = required_scope
+    
     def verify_token_data(self,token_data: dict) -> None:
         if token_data and token_data["refresh"]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Please provide an access token!"
+            )
+        user_data = token_data.get("user",None)
+        user_scopes = user_data.get("scopes",[])
+        if "*" in user_scopes:
+            return # Admin bypass
+        
+        if self.required_scope and self.required_scope not in user_scopes:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Not enough Permission. Require {self.required_scope} Scope"
             )
 
 class RefreshTokenBearer(TokenBearer):
